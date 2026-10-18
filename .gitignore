@@ -1,3 +1,18 @@
+# Simulation outputs (iverilog / vvp)
 sim
 gls
 *.vcd
+
+# LibreLane run directories (very large; only final metrics.json and GDS are kept in pnr/)
+pnr/runs/
+
+# Tool logs and run reports kept locally (docs keep the markdown, scripts and images)
+docs/logs/
+*.log
+
+# Screenshot intermediates and local caches
+*.xwd
+__pycache__/
+*.pyc
+*.swp
+*~

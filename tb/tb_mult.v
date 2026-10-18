@@ -10,6 +10,8 @@ module tb_mult;
     integer errors;
     integer checked;
     reg [7:0] expected;
+    reg [7:0] prev_p; // p as observed at the previous check
+    reg       bad;    // this vector failed at least one check
 
     mult_array dut(
         .clk(clk),
@@ -34,22 +36,33 @@ module tb_mult;
         repeat(2) @(posedge clk);
         @(negedge clk);
         rst_n = 1'b1;
+        prev_p = p;
 
-        // Inputs ared changed on the falling edge so that they are stable at the rising edge
+        // Inputs are changed on the falling edge so that they are stable at the rising edge
         for(i = 0; i < 16; i = i + 1) begin
             for(k = 0; k < 16; k = k + 1) begin
                 a = i;
                 b = k;
                 expected = i * k;
 
-                @(posedge clk); // inputs read
-                @(posedge clk);
-                @(negedge clk); // output is read
+                bad = 1'b0;
 
+                @(posedge clk); // edge 1: inputs captured into a_r/b_r
+                @(negedge clk); // latency check: p must not have changed yet
+                if(p !== prev_p) begin
+                    bad = 1'b1;
+                    $display("MISMATCH: a=%0d b=%0d p changed to %0d after 1 cycle, latency < 2 (t=%0t)", a, b, p, $time);
+                end
+
+                @(posedge clk); // edge 2: product captured into p
+                @(negedge clk); // output is read
                 if(p !== expected) begin
-                    errors = errors + 1;
+                    bad = 1'b1;
                     $display("MISMATCH: a=%0d b=%0d p=%0d expected=%0d (t=%0t)", a, b, p, expected, $time);
                 end
+
+                if(bad) errors = errors + 1;
+                prev_p = p;
 
                 checked = checked + 1;
             end

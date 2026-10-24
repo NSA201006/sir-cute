@@ -6,11 +6,18 @@ gls
 # LibreLane run directories (very large; only final metrics.json and GDS are kept in pnr/)
 pnr/runs/
 
-# Tool logs and run reports kept locally (docs keep the markdown, scripts and images)
-docs/logs/
-*.log
+# Local working notes, logs, helper scripts and images (kept out of the repository)
+docs/
 
-# Screenshot intermediates and local caches
+# Report sources and build products; only the final report PDF is part of the repository
+report/*
+!report/report.pdf
+
+# Local assistant memory
+CLAUDE.md
+
+# Tool logs, screenshot intermediates and local caches
+*.log
 *.xwd
 __pycache__/
 *.pyc

@@ -1,5 +1,7 @@
 # 4-bit Array Multiplier: RTL to GDSII on SkyWater SKY130
 
+### Team Name: `sir-cute`
+
 | Team member | Roll number |
 |---|---|
 | M P Samartha | 2023102038 |

@@ -25,8 +25,7 @@ module mult_array(
     wire [3:0] pp[3:0];
     wire [3:0] sums[1:0];
 
-    // 16 AND gates: pp[i][j] = a_r[j] & b_r[i]
-    // (single instances: Yosys does not support arrays of gate primitives)
+    // 16 AND gates
     and g0_0(pp[0][0], a_r[0], b_r[0]);
     and g0_1(pp[0][1], a_r[1], b_r[0]);
     and g0_2(pp[0][2], a_r[2], b_r[0]);

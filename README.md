@@ -44,11 +44,9 @@ vvp sim
 #   -> PASS: 256 vectors checked, 0 errors
 ```
 
-Waveform screenshot (the container has no display; GTKWave ran on a virtual X server and the screen was captured):
+Waveform (signals `clk`, `rst_n`, `a`, `b`, `p`):
 ```bash
-Xvfb :99 -screen 0 1600x560x24 -nolisten tcp &
-DISPLAY=:99 gtkwave mult.vcd docs/scripts/partA_wave.gtkw &      # signals clk, rst_n, a, b, p; markers A, B
-xwd -root -display :99 -out wave.xwd                               # then converted to PNG
+gtkwave mult.vcd
 ```
 
 Error-detection test (task 6). The `sum = a ^ b` change was made on a temporary copy of `full_adder.v`, so the original was never edited:
@@ -96,18 +94,15 @@ cd pnr && librelane config.json                                  # attempt 1, CL
 # from the repository root:
 cp pnr/runs/RUN_2026-10-18_16-22-16/final/metrics.json pnr/metrics.json
 cp pnr/runs/RUN_2026-10-18_16-22-16/final/gds/mult_array.gds pnr/mult_array.gds
-# additional characterization only (Section 8.5 of the report), not the deliverables:
+# additional characterization only, not the deliverables:
 # attempts 2..7: CLOCK_PERIOD in pnr/config.json increased by 0.5 ns each time, then
 cd pnr && librelane --run-tag attempt<N>_<P>ns config.json       # attempt2_4.0ns ... attempt7_6.5ns
 # pnr/config.json is set back to CLOCK_PERIOD = 3.5 afterwards
 ```
 
-Layout screenshots (headless KLayout with the PDK layer colours `sky130A.lyp`):
+Layout:
 ```bash
-QT_QPA_PLATFORM=offscreen klayout -z -nc -rx -r docs/scripts/partD_render.py \
-  -rd gds=pnr/mult_array.gds -rd out=docs/images/partD_layout_whole_die.png -rd px=1600
-QT_QPA_PLATFORM=offscreen klayout -z -nc -rx -r docs/scripts/partD_render.py \
-  -rd gds=pnr/mult_array.gds -rd out=docs/images/partD_layout_zoom_47-77um_x_42-72um.png -rd box=47,42,77,72 -rd px=1600
+klayout pnr/mult_array.gds
 ```
 
 Initial CLOCK_PERIOD = 1.2 × T_min = 1.2 × 2.79 = 3.348 → rounded up to 3.5 ns.

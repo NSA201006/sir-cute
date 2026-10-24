@@ -60,8 +60,9 @@ iverilog -g2012 -o "$F/sim_fault" tb/tb_mult.v "$F/full_adder.v" rtl/mult_array.
 #   -> FAIL: 256 vectors checked, 95 errors
 ```
 
-Worked example: roll number 2023102038 → A = 8 + 5 = 13, B = 7 → P = 91. In the waveform the inputs are captured at the rising edge at 4325 ns
-and `p = 91` appears at the next rising edge, 4335 ns (2-cycle latency).
+Worked example: roll number 2023102038 → A = 8 + 5 = 13, B = 7 → P = 91. In the waveform the inputs are applied at 4320 ns, just before rising edge 1.
+Edge 1 (4325 ns) captures them into `a_r`/`b_r`, and edge 2 (4335 ns) captures the product, so `p = 91` appears at the
+second rising edge after the inputs are applied (2-cycle latency).
 
 ## Part B: Logic synthesis
 
@@ -91,12 +92,14 @@ STA_PERIOD=2.79 sta sta/sta.tcl
 ## Part D: Physical design (LibreLane)
 
 ```bash
-cd pnr && librelane config.json                                  # attempt 1, CLOCK_PERIOD = 3.5
+cd pnr && librelane config.json                                  # attempt 1, CLOCK_PERIOD = 3.5 (final run)
+# from the repository root:
+cp pnr/runs/RUN_2026-10-18_16-22-16/final/metrics.json pnr/metrics.json
+cp pnr/runs/RUN_2026-10-18_16-22-16/final/gds/mult_array.gds pnr/mult_array.gds
+# additional characterization only (Section 8.5 of the report), not the deliverables:
 # attempts 2..7: CLOCK_PERIOD in pnr/config.json increased by 0.5 ns each time, then
 cd pnr && librelane --run-tag attempt<N>_<P>ns config.json       # attempt2_4.0ns ... attempt7_6.5ns
-# from the repository root:
-cp pnr/runs/attempt7_6.5ns/final/metrics.json pnr/metrics.json
-cp pnr/runs/attempt7_6.5ns/final/gds/mult_array.gds pnr/mult_array.gds
+# pnr/config.json is set back to CLOCK_PERIOD = 3.5 afterwards
 ```
 
 Layout screenshots (headless KLayout with the PDK layer colours `sky130A.lyp`):
@@ -107,16 +110,29 @@ QT_QPA_PLATFORM=offscreen klayout -z -nc -rx -r docs/scripts/partD_render.py \
   -rd gds=pnr/mult_array.gds -rd out=docs/images/partD_layout_zoom_47-77um_x_42-72um.png -rd box=47,42,77,72 -rd px=1600
 ```
 
-Initial CLOCK_PERIOD = 1.2 × T_min = 1.2 × 2.79 = 3.348 → rounded up to 3.5 ns. Record of every attempt:
+Initial CLOCK_PERIOD = 1.2 × T_min = 1.2 × 2.79 = 3.348 → rounded up to 3.5 ns.
+
+Pass criterion: as in Part C, timing is judged at the typical corner. Attempt 1 (3.5 ns) meets every criterion at TT
+(0 DRC, 0 LVS, TT setup slack ≥ 0), so it is the final run and the source of `pnr/metrics.json` and `pnr/mult_array.gds`.
+
+- The TT setup slack is the key `timing__setup__ws__corner:nom_tt_025C_1v80` (+0.5188 ns) in `pnr/metrics.json`.
+  The plain key `timing__setup__ws` (−2.2565 ns) is the worst over all 9 corners, set by the slow-slow corner
+  `max_ss_100C_1v60`, not TT.
+- LibreLane ends attempt 1 with exit status 2 because its default multi-corner signoff reports setup violations at the
+  slow-slow corners. DRC, LVS and TT timing are all clean.
+- Attempts 2–7 only characterize how far the clock period must be relaxed for all corners to pass (6.5 ns). They are
+  not the deliverables.
+
+Record of every attempt:
 
 | Attempt | CLOCK_PERIOD (ns) | Result | Worst setup slack, all 9 corners (ns) | Setup slack, nom_tt_025C_1v80 (ns) | DRC | LVS |
 |---|---|---|---|---|---|---|
-| 1 | 3.5 | failed: setup violations at ss corners | −2.256 | +0.519 | 0 | 0 |
-| 2 | 4.0 | failed: setup violations at ss corners | −1.757 | +1.019 | 0 | 0 |
-| 3 | 4.5 | failed: setup violations at ss corners | −1.253 | +1.520 | 0 | 0 |
-| 4 | 5.0 | failed: setup violations at ss corners | −0.753 | +2.020 | 0 | 0 |
-| 5 | 5.5 | failed: setup violations at ss corners | −0.375 | +2.493 | 0 | 0 |
-| 6 | 6.0 | failed: setup violations at ss corners | −0.179 | +2.881 | 0 | 0 |
-| **7** | **6.5** | **passed (flow completed, 0 DRC, 0 LVS, no setup/hold violations)** | **+0.130** | **+3.322** | **0** | **0** |
+| **1 (final)** | **3.5** | **passed at TT (0 DRC, 0 LVS, TT setup slack ≥ 0); exit status 2 from setup violations at ss corners** | **−2.256** | **+0.519** | **0** | **0** |
+| 2 | 4.0 | characterization: setup violations at ss corners | −1.757 | +1.019 | 0 | 0 |
+| 3 | 4.5 | characterization: setup violations at ss corners | −1.253 | +1.520 | 0 | 0 |
+| 4 | 5.0 | characterization: setup violations at ss corners | −0.753 | +2.020 | 0 | 0 |
+| 5 | 5.5 | characterization: setup violations at ss corners | −0.375 | +2.493 | 0 | 0 |
+| 6 | 6.0 | characterization: setup violations at ss corners | −0.179 | +2.881 | 0 | 0 |
+| 7 | 6.5 | characterization: all 9 corners pass (exit status 0) | +0.130 | +3.322 | 0 | 0 |
 
 The `runs/` folder is not committed (`.gitignore`).

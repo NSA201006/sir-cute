@@ -12,18 +12,7 @@ Design: 4 × 4-bit unsigned array multiplier (16 AND gates, 12 full adders, 16 f
 ## Environment
 
 All tools come from the IIC-OSIC-TOOLS image, tag `2026.10`
-(digest `sha256:306585de35d198e70ea58950f77147c86f56c698726a19afea9f1c83009557be`), run with rootless Podman
-(no Docker on our Linux host). The repository is mounted at `/foss/designs/DVD-Assignment` and `PDK=sky130A`.
-
-```bash
-# host, one-time
-podman pull docker.io/hpretl/iic-osic-tools:2026.10
-# host, start a shell in the container (SELinux host, rootless Podman; same flags as upstream start_shell.sh)
-podman run --rm -it --user 0:0 --security-opt seccomp=unconfined --security-opt label=disable \
-  -e PDK=sky130A -v "$PWD":/foss/designs/DVD-Assignment:rw -w /foss/designs/DVD-Assignment \
-  docker.io/hpretl/iic-osic-tools@sha256:306585de35d198e70ea58950f77147c86f56c698726a19afea9f1c83009557be --skip bash
-```
-(On our host this command is wrapped in a small script, `eda`, which also mounts a scratch directory and sets `IIC_OSIC_TOOLS_QUIET=1`.)
+(digest `sha256:306585de35d198e70ea58950f77147c86f56c698726a19afea9f1c83009557be`), with `PDK=sky130A`.
 
 Tool versions reported inside the container: Icarus Verilog 14.0 (devel), Yosys 0.70, OpenSTA 3.1.0, LibreLane 3.1.0.dev3,
 OpenROAD 26Q1-1024-gdcf36133a (LibreLane's), KLayout 0.30.12, Magic 8.3.685, Netgen 1.5.324, GTKWave 4.0.0-prealpha.
@@ -60,9 +49,9 @@ iverilog -g2012 -o "$F/sim_fault" tb/tb_mult.v "$F/full_adder.v" rtl/mult_array.
 #   -> FAIL: 256 vectors checked, 95 errors
 ```
 
-Worked example: roll number 2023102038 → A = 8 + 5 = 13, B = 7 → P = 91. In the waveform the inputs are applied at 4320 ns, just before rising edge 1.
-Edge 1 (4325 ns) captures them into `a_r`/`b_r`, and edge 2 (4335 ns) captures the product, so `p = 91` appears at the
-second rising edge after the inputs are applied (2-cycle latency).
+Worked example: roll number 2023102038 → A = 8 + 5 = 13, B = 7 → P = 91. In the waveform the inputs are applied at 4320 ns,
+during cycle 0 (which starts at rising edge 0, 4315 ns). Edge 1 (4325 ns) samples them into `a_r`/`b_r`, and edge 2
+(4335 ns) samples the product into `p`, so `p = 91` is available in cycle 2 (2-cycle latency).
 
 ## Part B: Logic synthesis
 
@@ -132,4 +121,4 @@ Record of every attempt:
 | 6 | 6.0 | characterization: setup violations at ss corners | −0.179 | +2.881 | 0 | 0 |
 | 7 | 6.5 | characterization: all 9 corners pass (exit status 0) | +0.130 | +3.322 | 0 | 0 |
 
-The `runs/` folder is not committed (`.gitignore`).
+The `runs/` folder is not committed.
